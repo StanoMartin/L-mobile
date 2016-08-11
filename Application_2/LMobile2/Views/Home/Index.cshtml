@@ -60,7 +60,7 @@
     });
 
     ServiceAuftragDB = new ServiceAuftragContext({
-        provider: 'sqLite', databaseName: 'ServiceAuftragDatabase', dbCreation: $data.storageProviders.DbCreationType.DropAllExistingTables //DropAllExistingTables //DropTableIfChanged
+        provider: 'sqLite', databaseName: 'ServiceAuftragDatabase', dbCreation: $data.storageProviders.DbCreationType.DropTableIfChanged //DropAllExistingTables //DropTableIfChanged
     });
     
     function LoadData() {
@@ -302,36 +302,48 @@
         ko.applyBindings(serviceAuftragDetailVM, document.getElementById("partialViewsDetail"));
 
         ServiceAuftragDB.onReady(function () {
-            //Create
-            var kunden = ServiceAuftragDB.Kunden.addMany([
-                { KundenNummer: 'K000001', Name: 'Peter Fischer GmbH' },
-                { KundenNummer: 'K000002', Name: 'Pavol Fischer KS' },
-                { KundenNummer: 'K000003', Name: 'George Fischer sro' }
-            ]);
 
-            var maschinen = ServiceAuftragDB.Maschinen.addMany([
-                { MaschinenNummer: 'M000815', Bezeichnung: 'Laserschweissanlage' },
-                { MaschinenNummer: 'M000816', Bezeichnung: 'Auto' },
-                { MaschinenNummer: 'M000817', Bezeichnung: 'LKW' }
-            ]);
+            ServiceAuftragDB.ServiceAuftrage
+                .filter(function (auftrag) { return auftrag.AuftragsNummer.length > 0 })
+                .count()
+                .then(function (result) {
+                if(result == 0)
+                {
+                    // Create Test data
+                    var kunden = ServiceAuftragDB.Kunden.addMany([
+                    { KundenNummer: 'K000001', Name: 'Peter Fischer GmbH' },
+                    { KundenNummer: 'K000002', Name: 'Pavol Fischer KS' },
+                    { KundenNummer: 'K000003', Name: 'George Fischer sro' }
+                    ]);
 
-            var arbeitsZeitMeldungen = ServiceAuftragDB.ArbeitsZeitMeldungen.addMany([
-                { ArtikelNummer: '4711', AnfangDatum: '2016-08-04', AnfangUhrZeit: '1970-01-01T08:15:00', EndeDatum: '2016-08-05', EndeUhrZeit: '1970-01-01T08:45:00' },
-                { ArtikelNummer: '0815', AnfangDatum: '2016-08-03', AnfangUhrZeit: '1970-01-01T09:25:00', EndeDatum: '2016-08-06', EndeUhrZeit: '1970-01-01T08:55:00' },
-                { ArtikelNummer: '0817', AnfangDatum: '2016-08-02', AnfangUhrZeit: '1970-01-01T10:35:00', EndeDatum: '2016-08-07', EndeUhrZeit: '1970-01-01T08:58:00' }
-            ]);
+                    var maschinen = ServiceAuftragDB.Maschinen.addMany([
+                        { MaschinenNummer: 'M000815', Bezeichnung: 'Laserschweissanlage' },
+                        { MaschinenNummer: 'M000816', Bezeichnung: 'Auto' },
+                        { MaschinenNummer: 'M000817', Bezeichnung: 'LKW' }
+                    ]);
 
-            var serviceAuftrage = ServiceAuftragDB.ServiceAuftrage.addMany([
-                { AuftragsNummer: 'S0004711', AuftragsArt: 'Reparaturauftrag', KundenNummer: 'K000001', MaschinenNummer: 'M000815', Kunde: kunden[0], Maschine: maschinen[0], ArbeitsZeitMeldungen: [arbeitsZeitMeldungen[0]] },
-                { AuftragsNummer: 'S0004720', AuftragsArt: 'Reparaturauftrag 2', KundenNummer: 'K000002', MaschinenNummer: 'M000816', Kunde: kunden[1], Maschine: maschinen[1], ArbeitsZeitMeldungen: [arbeitsZeitMeldungen[1]] },
-                { AuftragsNummer: 'S0004730', AuftragsArt: 'Reparaturauftrag 3', KundenNummer: 'K000003', MaschinenNummer: 'M000817', Kunde: kunden[2], Maschine: maschinen[2], ArbeitsZeitMeldungen: [arbeitsZeitMeldungen[2]] }
-            ]);
-            
-            ServiceAuftragDB.saveChanges(
-                function () {
-                    LoadData();
+                    var arbeitsZeitMeldungen = ServiceAuftragDB.ArbeitsZeitMeldungen.addMany([
+                        { ArtikelNummer: '4711', AnfangDatum: '2016-08-04', AnfangUhrZeit: '1970-01-01T08:15:00', EndeDatum: '2016-08-05', EndeUhrZeit: '1970-01-01T08:45:00' },
+                        { ArtikelNummer: '0815', AnfangDatum: '2016-08-03', AnfangUhrZeit: '1970-01-01T09:25:00', EndeDatum: '2016-08-06', EndeUhrZeit: '1970-01-01T08:55:00' },
+                        { ArtikelNummer: '0817', AnfangDatum: '2016-08-02', AnfangUhrZeit: '1970-01-01T10:35:00', EndeDatum: '2016-08-07', EndeUhrZeit: '1970-01-01T08:58:00' }
+                    ]);
+
+                    var serviceAuftrage = ServiceAuftragDB.ServiceAuftrage.addMany([
+                        { AuftragsNummer: 'S0004711', AuftragsArt: 'Reparaturauftrag', KundenNummer: 'K000001', MaschinenNummer: 'M000815', Kunde: kunden[0], Maschine: maschinen[0], ArbeitsZeitMeldungen: [arbeitsZeitMeldungen[0]] },
+                        { AuftragsNummer: 'S0004720', AuftragsArt: 'Reparaturauftrag 2', KundenNummer: 'K000002', MaschinenNummer: 'M000816', Kunde: kunden[1], Maschine: maschinen[1], ArbeitsZeitMeldungen: [arbeitsZeitMeldungen[1]] },
+                        { AuftragsNummer: 'S0004730', AuftragsArt: 'Reparaturauftrag 3', KundenNummer: 'K000003', MaschinenNummer: 'M000817', Kunde: kunden[2], Maschine: maschinen[2], ArbeitsZeitMeldungen: [arbeitsZeitMeldungen[2]] }
+                    ]);
+
+                    ServiceAuftragDB.saveChanges(
+                        function () {
+                            LoadData();
+                        }
+                    );
                 }
-            );
+                else {
+                    LoadData();
+                }                
+            });
         });
     });
     //---------end: Document Ready----------

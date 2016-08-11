@@ -21,6 +21,7 @@ CACHE:
 /jaydata.js
 /jaydatamodules/knockout.js
 /jaydataproviders/SqLiteProvider.js
+/jaydatamodules/deferred.js
 
 NETWORK:
 *
