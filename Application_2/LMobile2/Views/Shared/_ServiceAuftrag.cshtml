@@ -1,0 +1,117 @@
+﻿
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+<script src="~/Scripts/bootstrap-timepicker.js"></script>
+<link href="~/Content/bootstrap-timepicker.min.css" rel="stylesheet" />
+<script src="~/jaydatamodules/deferred.js"></script>
+
+<h2>Serviceauftrag Detail</h2>
+<br />
+<div class="row">
+    <h3>Kunde</h3>
+    <div class="col-sm-6">
+        <div class="form-horizontal" role="form">
+            <div class="form-group">
+                <label class="control-label col-sm-4">Kundennummer</label>
+                <div class="col-sm-4">
+                    <input data-bind="value: kundenNummer, attr: {disabled: isEdit}" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-sm-4">Name</label>
+                <div class="col-sm-4">
+                    <input data-bind="value: kundenName" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <h3>Maschine</h3>
+    <div class="col-sm-6">
+        <div class="form-horizontal" role="form">
+            <div class="form-group">
+                <label class="control-label col-sm-4">Maschinennummer</label>
+                <div class="col-sm-4">
+                    <input data-bind="value: maschinenNummer, attr: {disabled: isEdit}" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-sm-4">Bezeichnung</label>
+                <div class="col-sm-4">
+                    <input data-bind="value: maschinenBezeichnung" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <h3>Serviceauftrag</h3>
+    <div class="col-sm-6">
+        <div class="form-horizontal" role="form">
+            <div class="form-group">
+                <label class="control-label col-sm-4">Auftragsnummer</label>
+                <div class="col-sm-4">
+                    <input data-bind="value: auftragsNummer, attr: {disabled: isEdit}" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-sm-4">Auftragsart</label>
+                <div class="col-sm-4">
+                    <input data-bind="value: auftragsArt" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <h3>Arbeitszeitmeldung</h3>
+    <div class="col-sm-12">
+        <table class="dataTable table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Artikelnummer</th>
+                    <th>Anfang Datum</th>
+                    <th>Anfang Uhrzeit</th>
+                    <th>Ende Datum</th>
+                    <th>Ende Uhrzeit</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody data-bind="template: {name:'arbeitszeitMeldungenTemplate', foreach: arbeitsZeitMeldungen}"></tbody>
+        </table>
+        <input class="btn btn-info" value="Arbeitszeitmeldung hinzufuegen" type="submit" data-bind="click: addArbeitsZeitMeldung" />
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <input class="btn btn-info pull-right" style="margin-left:20px;" value="Abbrechen" type="submit" data-bind="click: cancel" />
+        <input class="btn btn-info pull-right" value="Speichern" type="submit" data-bind="click: save" />
+    </div>
+</div>
+
+<script id="arbeitszeitMeldungenTemplate" type="text/html">
+    <tr>
+        <td><input data-bind="value: artikelNummer, enable: isNew" /></td>
+        <td><input class="datepicker" data-date-format="d.m.yyyy" data-bind="value: anfangDatum" /></td>
+        <td>
+            <div class="input-group bootstrap-timepicker timepicker">
+                <input type="text" class="form-control input-small" data-bind="value: anfangUhrzeit">
+                <span class="input-group-addon">
+                    <i class="glyphicon glyphicon-time"></i>
+                </span>
+            </div>
+        </td>
+        <td><input class="datepicker" data-date-format="d.m.yyyy" data-bind="value: endeDatum" /></td>
+        <td>
+            <div class="input-group bootstrap-timepicker timepicker">
+                <input type="text" class="form-control input-small" data-bind="value: endeUhrzeit">
+                <span class="input-group-addon">
+                    <i class="glyphicon glyphicon-time"></i>
+                </span>
+            </div>
+        </td>
+        <td><input class="btn btn-info pull-right" value="Entfernen" type="submit" data-bind="click: removeArbeitsZeitMeldung" /></td>
+    </tr>
+</script>

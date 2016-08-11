@@ -1,0 +1,104 @@
+﻿
+<div id="ServiceAuftragList" class="row">
+    <div class="col-sm-12">
+        <h2>Serviceauftrag Liste</h2>
+        <br />
+        <table class="dataTable table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Auftragsnummer</th>
+                    <th>Auftragsart</th>
+                    <th>Kundennummer</th>
+                    <th>Maschinennummer</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody data-bind="template: {name:'serviceAuftragListTemplate', foreach: serviceAuftrage}">                    
+            </tbody>
+        </table>
+        <input class="btn btn-info" value="Serviceauftrag hinzufuegen" type="submit" data-bind="click: addServiceAuftrag" />
+    </div>
+</div>
+
+<script id="serviceAuftragListTemplate" type="text/html">
+    <tr>
+        <td data-bind="text: auftragsNummer"></td>
+        <td data-bind="text: auftragsArt"></td>
+        <td data-bind="text: kundenNummer"></td>
+        <td data-bind="text: machinenNummer"></td>
+        <td><input class="btn btn-info pull-right" value="Bearbeiten" type="submit" data-bind="click: editServiceAuftrag" /></td>
+    </tr>
+</script>
+
+
+<script type="text/javascript">
+
+    $(function ()
+    {
+        InitialiseData();
+    });
+       
+    function LoadData(callback) {
+        $.ajax({
+            type: 'get',
+            url: '/oserviceauftragdata/ServiceAuftrage',
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function (data) {
+                serviceAuftragListVM.serviceAuftrage([]);
+                for (var i = 0; i < data.value.length; i++) {
+                    serviceAuftragListVM.serviceAuftrage().push(new serviceAuftragVM(data.value[i].AuftragsNummer, data.value[i].AuftragsArt, data.value[i].KundenNummer, data.value[i].MachinenNummer));
+                }
+                if (callback)
+                    callback();
+            }
+        });
+    }
+
+    function InitialiseData() {
+        LoadData(ApplyBindings);
+    }
+
+    function ApplyBindings()
+    {
+        ko.applyBindings(serviceAuftragListVM, document.getElementById("ServiceAuftragList"));
+    }
+
+    var serviceAuftragListVM = {        
+        serviceAuftrage: ko.observableArray([]),
+
+        addServiceAuftrag: function () {
+            $.ajax({
+                url: "@Url.Action("AddServiceAuftrag", "Home")",
+                type: 'GET',
+                dataType: 'html',
+                async: false,
+                success: function (data) {
+                    $('#partialViews').empty();
+                    $('#partialViews').html(data);                    
+                }
+            });
+        }
+    };
+
+    function serviceAuftragVM(atNummer, art, kuNummer, mNummer) {
+        var self = this;
+        self.auftragsNummer = ko.observable(atNummer);
+        self.auftragsArt = ko.observable(art);
+        self.kundenNummer = ko.observable(kuNummer);
+        self.machinenNummer = ko.observable(mNummer);
+
+        self.editServiceAuftrag = function () {         
+            $.ajax({
+                url: "@Url.Action("Edit", "Home")?auftragNummer="+self.auftragsNummer(),
+                type: "GET",
+                contentType: "html",
+                success: function (data) {
+                    $('#partialViews').empty();
+                    $('#partialViews').html(data);
+                }
+            });
+        };
+    }
+
+</script>

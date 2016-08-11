@@ -1,0 +1,361 @@
+﻿
+@{
+    ViewBag.Title = "Home Page";
+}
+
+@Scripts.Render("~/bundles/knockout")
+<script src="~/jaydata.js"></script>
+<script src="~/jaydatamodules/knockout.js"></script>
+<script src="~/jaydataproviders/SqLiteProvider.js"></script>
+
+<div class="container">
+    <div id="partialViewsList">
+        @{Html.RenderPartial("_ServiceAuftrageList");}
+    </div>
+    <div id="partialViewsDetail" style="display:none">
+        @{Html.RenderPartial("_ServiceAuftrag");}
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    //-------------------------JayData start---------------------------
+    var Kunde;
+    var Maschine;
+    var ArbeitsZeitMeldung;
+    var ServiceAuftrag;
+    var ServiceAuftragContext;
+    var ServiceAuftragDB;
+
+    Kunde = $data.Entity.extend("Kunde", {
+        KundenNummer: { type: "string", key: true, computed: false, maxLength: 255 },
+        Name: { type: "string", required: true, maxLength: 255 }
+    });
+    Maschine = $data.Entity.extend("Maschine", {
+        MaschinenNummer: { type: "string", key: true, computed: false, maxLength: 255 },
+        Bezeichnung: { type: "string", required: true, maxLength: 255 }
+    });
+    ArbeitsZeitMeldung = $data.Entity.extend("ArbeitsZeitMeldung", {
+        ArtikelNummer: { type: "string", key: true, computed: false, maxLength: 255 },
+        AnfangDatum: { type: "date", required: true },
+        AnfangUhrZeit: { type: "date", required: true },
+        EndeDatum: { type: "date", required: true },
+        EndeUhrZeit: { type: "date", required: true }
+    });
+    ServiceAuftrag = $data.Entity.extend("ServiceAuftrag", {
+        AuftragsNummer: { type: "string", key: true, computed: false, maxLength: 255 },
+        AuftragsArt: { type: "string", required: true, maxLength: 255 },
+        KundenNummer: { type: "string", required: true, maxLength: 255 },
+        MaschinenNummer: { type: "string", required: true, maxLength: 255 },
+        Kunde: { type: "Kunde" },
+        Maschine: { type: "Maschine" },
+        ArbeitsZeitMeldungen: { type: "Array", elementType: "ArbeitsZeitMeldung" }
+    });
+
+    ServiceAuftragContext = $data.EntityContext.extend("ServiceAuftragContext", {
+        Kunden: { type: $data.EntitySet, elementType: Kunde },
+        Maschinen: { type: $data.EntitySet, elementType: Maschine },
+        ArbeitsZeitMeldungen: { type: $data.EntitySet, elementType: ArbeitsZeitMeldung },
+        ServiceAuftrage: { type: $data.EntitySet, elementType: ServiceAuftrag }
+    });
+
+    ServiceAuftragDB = new ServiceAuftragContext({
+        provider: 'sqLite', databaseName: 'ServiceAuftragDatabase', dbCreation: $data.storageProviders.DbCreationType.DropAllExistingTables //DropAllExistingTables //DropTableIfChanged
+    });
+    
+    function LoadData() {
+        serviceAuftragListVM.serviceAuftrage([]);
+        ServiceAuftragDB.ServiceAuftrage.toArray(function (data) {
+            for (var i = 0; i < data.length; i++) {
+                serviceAuftragListVM.serviceAuftrage
+                    .push(new serviceAuftragVM(
+                        data[i].AuftragsNummer,
+                        data[i].AuftragsArt,
+                        data[i].KundenNummer,
+                        data[i].Kunde.Name,
+                        data[i].MaschinenNummer,
+                        data[i].Maschine.Bezeichnung));
+            }
+        });
+    }
+
+    //-------------------------JayData end---------------------------
+
+    //---------start: List ModelView ----------
+
+    var serviceAuftragListVM = {
+        serviceAuftrage: ko.observableArray([]),
+        addServiceAuftrag: function () {
+            isEdit = false;
+            ClearDetailVM();
+            $("#partialViewsList").css("display", "none");
+            $("#partialViewsDetail").css("display", "block");
+        }
+    };
+
+    function serviceAuftragVM(aNummer, aArt, kNummer, kName, mNummer, mBezeichnung) {
+        var self = this;
+        self.auftragsNummer = ko.observable(aNummer);
+        self.auftragsArt = ko.observable(aArt);
+        self.kundenNummer = ko.observable(kNummer);
+        self.kundenName = ko.observable(kName);
+        self.maschinenNummer = ko.observable(mNummer);
+        self.maschinenBezeichnung = ko.observable(mBezeichnung);
+
+        self.editServiceAuftrag = function () {
+            isEdit = true;
+            LoadDetailVM(self.auftragsNummer());
+        };
+    }
+
+    //---------end: List View ----------
+
+    //---------start: Detail ModelView ----------
+
+    var isEdit = false;
+
+    var serviceAuftragDetailVM = {
+        isEdit: ko.observable(false),
+        auftragsNummer: ko.observable(),
+        auftragsArt: ko.observable(),
+        kundenNummer: ko.observable(),
+        kundenName: ko.observable(),
+        maschinenNummer: ko.observable(),
+        maschinenBezeichnung: ko.observable(),
+        arbeitsZeitMeldungen: ko.observableArray([]),
+        addArbeitsZeitMeldung: function () {
+            this.arbeitsZeitMeldungen.push(new arbeitsZeitMeldung());
+            InitializeDataTimePickers();
+        },
+        save: function () {
+            if (isEdit) {
+                UpdateServiceAuftrag(serviceAuftragDetailVM);
+            }
+            else {
+                AddServiceAuftrag(serviceAuftragDetailVM);
+            }
+            SaveChanges();
+        },
+        cancel: function () {
+            $("#partialViewsList").css("display", "block");
+            $("#partialViewsDetail").css("display", "none");
+        }
+    };
+
+    function arbeitsZeitMeldung() {
+        var self = this;
+        self.isNew = ko.observable(true);
+        self.artikelNummer = ko.observable();
+        self.anfangDatum = ko.observable();
+        self.endeDatum = ko.observable();
+        self.anfangUhrzeit = ko.observable();
+        self.endeUhrzeit = ko.observable();
+        self.removeArbeitsZeitMeldung = function () {
+            serviceAuftragDetailVM.arbeitsZeitMeldungen.remove(this);
+        };
+    }
+
+    function AddServiceAuftrag(data) {
+
+        var newkunde = new Kunde();
+        newkunde.KundenNummer = data.kundenNummer();
+        newkunde.Name = data.kundenName();
+        ServiceAuftragDB.Kunden.add(newkunde);
+
+        var newmachine = new Maschine();
+        newmachine.MaschinenNummer = data.maschinenNummer();
+        newmachine.Bezeichnung = data.maschinenBezeichnung();
+        ServiceAuftragDB.Maschinen.add(newmachine);
+
+        var azmList = [];
+        for (var i = 0; i < data.arbeitsZeitMeldungen().length; i++)
+        {
+            var azm = new ArbeitsZeitMeldung();
+            var item = data.arbeitsZeitMeldungen()[i];
+            azm.ArtikelNummer = item.artikelNummer();
+            azm.AnfangDatum = GetValidDate(item.anfangDatum());
+            azm.AnfangUhrZeit = GetValidTime(item.anfangUhrzeit());
+            azm.EndeDatum = GetValidDate(item.endeDatum());
+            azm.EndeUhrZeit = GetValidTime(item.endeUhrzeit());
+            azmList.push(azm);
+        }
+        ServiceAuftragDB.ArbeitsZeitMeldungen.addMany(azmList);
+
+        var sauft = new ServiceAuftrag();
+        sauft.AuftragsNummer = data.auftragsNummer();
+        sauft.AuftragsArt = data.auftragsArt();
+        sauft.KundenNummer = data.kundenNummer();
+        sauft.MaschinenNummer = data.maschinenNummer();
+        sauft.Kunde = newkunde;
+        sauft.Maschine = newmachine;
+        sauft.ArbeitsZeitMeldungen = azmList;
+
+        ServiceAuftragDB.ServiceAuftrage.add(sauft);
+    }
+
+    function UpdateServiceAuftrag(data) {
+
+        var kundegDb = ServiceAuftragDB.Kunden.attachOrGet({ KundenNummer: data.kundenNummer() });
+        kundegDb.Name = data.kundenName();
+
+        var maschinegDb = ServiceAuftragDB.Maschinen.attachOrGet({ MaschinenNummer: data.maschinenNummer() });
+        maschinegDb.Bezeichnung = data.maschinenBezeichnung();
+
+        var azmList = [];
+        for (var i = 0; i < data.arbeitsZeitMeldungen().length; i++)
+        {
+            var azm = new ArbeitsZeitMeldung();
+            var item = data.arbeitsZeitMeldungen()[i];
+
+            var meldungDb;
+            if (item.isNew())
+            {
+                meldungDb = new ArbeitsZeitMeldung();
+                ServiceAuftragDB.ArbeitsZeitMeldungen.add(meldungDb);
+            }
+            else
+            {
+                var meldungDb = ServiceAuftragDB.ArbeitsZeitMeldungen.attachOrGet({ ArtikelNummer: item.artikelNummer() });
+            }            
+            meldungDb.ArtikelNummer = item.artikelNummer();
+            meldungDb.AnfangDatum = GetValidDate(item.anfangDatum());
+            meldungDb.AnfangUhrZeit = GetValidTime(item.anfangUhrzeit());
+            meldungDb.EndeDatum = GetValidDate(item.endeDatum());
+            meldungDb.EndeUhrZeit = GetValidTime(item.endeUhrzeit());
+            azmList.push(meldungDb);
+        }
+
+        var serviceAuftragDb = ServiceAuftragDB.ServiceAuftrage.attachOrGet({ AuftragsNummer: data.auftragsNummer() });
+        serviceAuftragDb.AuftragsArt = data.auftragsArt();
+        serviceAuftragDb.Kunde = kundegDb;
+        serviceAuftragDb.Maschine = maschinegDb;
+        serviceAuftragDb.ArbeitsZeitMeldungen = azmList;
+    }
+
+    function SaveChanges()
+    {
+        ServiceAuftragDB.saveChanges(function(){            
+            $("#partialViewsList").css("display", "block");
+            $("#partialViewsDetail").css("display", "none");
+            LoadData();
+        });
+    }
+
+    function ClearDetailVM() {
+
+        serviceAuftragDetailVM.isEdit(false);
+        serviceAuftragDetailVM.auftragsNummer("");
+        serviceAuftragDetailVM.auftragsArt("");
+        serviceAuftragDetailVM.kundenNummer("");
+        serviceAuftragDetailVM.kundenName("");
+        serviceAuftragDetailVM.maschinenNummer("");
+        serviceAuftragDetailVM.maschinenBezeichnung("");
+        serviceAuftragDetailVM.arbeitsZeitMeldungen([]);
+    }
+
+    function LoadDetailVM(auftragsNummer) {
+        var self = this;
+        self.auftragsNummer = auftragsNummer
+        ServiceAuftragDB.ServiceAuftrage.single(
+            function (auftrag) { return auftrag.AuftragsNummer == self.auftragsNummer }, {},
+            function (auftrag) {
+                
+                serviceAuftragDetailVM.isEdit(true);
+                serviceAuftragDetailVM.auftragsNummer(auftrag.AuftragsNummer);
+                serviceAuftragDetailVM.auftragsArt(auftrag.AuftragsArt);
+                serviceAuftragDetailVM.kundenNummer(auftrag.KundenNummer);
+                serviceAuftragDetailVM.kundenName(auftrag.Kunde.Name);
+                serviceAuftragDetailVM.maschinenNummer(auftrag.MaschinenNummer);
+                serviceAuftragDetailVM.maschinenBezeichnung(auftrag.Maschine.Bezeichnung);
+
+                serviceAuftragDetailVM.arbeitsZeitMeldungen([]);
+                for (var i = 0; i < auftrag.ArbeitsZeitMeldungen.length; i++) {
+                    var meldung = new arbeitsZeitMeldung();
+                    meldung.artikelNummer(auftrag.ArbeitsZeitMeldungen[i].ArtikelNummer);
+                    meldung.isNew(false);
+
+                    aDate = new Date(auftrag.ArbeitsZeitMeldungen[i].AnfangDatum)
+                    meldung.anfangDatum(aDate.getDate() + "." + (1+aDate.getUTCMonth()) + "." + aDate.getUTCFullYear());
+                    eDate = new Date(auftrag.ArbeitsZeitMeldungen[i].EndeDatum)
+                    meldung.endeDatum(eDate.getDate() + "." + (1+eDate.getUTCMonth()) + "." + eDate.getUTCFullYear());
+
+                    aTime = new Date(auftrag.ArbeitsZeitMeldungen[i].AnfangUhrZeit);
+                    meldung.anfangUhrzeit(aTime.getUTCHours() + ":" + aTime.getUTCMinutes());
+                    eTime = new Date(auftrag.ArbeitsZeitMeldungen[i].EndeUhrZeit);
+                    meldung.endeUhrzeit(eTime.getUTCHours() + ":" + eTime.getUTCMinutes());
+
+                    serviceAuftragDetailVM.arbeitsZeitMeldungen.push(meldung);
+                }
+
+                $("#partialViewsList").css("display", "none");
+                $("#partialViewsDetail").css("display", "block");
+                InitializeDataTimePickers();
+            });
+    }
+
+    //---------end: Detail View ----------
+
+    //---------start: Document Ready----------
+    $(function () {
+
+        ko.applyBindings(serviceAuftragListVM, document.getElementById("partialViewsList"));
+        ko.applyBindings(serviceAuftragDetailVM, document.getElementById("partialViewsDetail"));
+
+        ServiceAuftragDB.onReady(function () {
+            //Create
+            var kunden = ServiceAuftragDB.Kunden.addMany([
+                { KundenNummer: 'K000001', Name: 'Peter Fischer GmbH' },
+                { KundenNummer: 'K000002', Name: 'Pavol Fischer KS' },
+                { KundenNummer: 'K000003', Name: 'George Fischer sro' }
+            ]);
+
+            var maschinen = ServiceAuftragDB.Maschinen.addMany([
+                { MaschinenNummer: 'M000815', Bezeichnung: 'Laserschweissanlage' },
+                { MaschinenNummer: 'M000816', Bezeichnung: 'Auto' },
+                { MaschinenNummer: 'M000817', Bezeichnung: 'LKW' }
+            ]);
+
+            var arbeitsZeitMeldungen = ServiceAuftragDB.ArbeitsZeitMeldungen.addMany([
+                { ArtikelNummer: '4711', AnfangDatum: '2016-08-04', AnfangUhrZeit: '1970-01-01T08:15:00', EndeDatum: '2016-08-05', EndeUhrZeit: '1970-01-01T08:45:00' },
+                { ArtikelNummer: '0815', AnfangDatum: '2016-08-03', AnfangUhrZeit: '1970-01-01T09:25:00', EndeDatum: '2016-08-06', EndeUhrZeit: '1970-01-01T08:55:00' },
+                { ArtikelNummer: '0817', AnfangDatum: '2016-08-02', AnfangUhrZeit: '1970-01-01T10:35:00', EndeDatum: '2016-08-07', EndeUhrZeit: '1970-01-01T08:58:00' }
+            ]);
+
+            var serviceAuftrage = ServiceAuftragDB.ServiceAuftrage.addMany([
+                { AuftragsNummer: 'S0004711', AuftragsArt: 'Reparaturauftrag', KundenNummer: 'K000001', MaschinenNummer: 'M000815', Kunde: kunden[0], Maschine: maschinen[0], ArbeitsZeitMeldungen: [arbeitsZeitMeldungen[0]] },
+                { AuftragsNummer: 'S0004720', AuftragsArt: 'Reparaturauftrag 2', KundenNummer: 'K000002', MaschinenNummer: 'M000816', Kunde: kunden[1], Maschine: maschinen[1], ArbeitsZeitMeldungen: [arbeitsZeitMeldungen[1]] },
+                { AuftragsNummer: 'S0004730', AuftragsArt: 'Reparaturauftrag 3', KundenNummer: 'K000003', MaschinenNummer: 'M000817', Kunde: kunden[2], Maschine: maschinen[2], ArbeitsZeitMeldungen: [arbeitsZeitMeldungen[2]] }
+            ]);
+            
+            ServiceAuftragDB.saveChanges(
+                function () {
+                    LoadData();
+                }
+            );
+        });
+    });
+    //---------end: Document Ready----------
+
+    function InitializeDataTimePickers() {
+        $('.datepicker').datepicker({
+            format: "d.m.yyyy"
+        });
+        $('div.bootstrap-timepicker > input').timepicker({
+            showMeridian: false,
+            maxHours: 24
+        });
+    }
+
+    function GetValidTime(time) {
+        var res = time.split(':');
+        var correctHours = res[0] < 10 ? "0" + res[0] : res[0];
+        var datetime = "1970-01-01T" + correctHours + ":" + res[1] + ":00";
+        return new Date(datetime);
+    }
+
+    function GetValidDate(date) {
+        var res = date.split('.');
+        return new Date(res[2], res[1] - 1, res[0], 0, 0, 0, 0);
+    }
+
+</script>

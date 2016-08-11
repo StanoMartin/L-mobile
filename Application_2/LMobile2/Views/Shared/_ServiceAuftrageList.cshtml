@@ -1,0 +1,34 @@
+﻿
+<div class="row">
+    <div class="col-sm-12">
+        <h2>Serviceauftrag list</h2>
+        <br />
+        <table class="dataTable table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Auftragsnummer</th>
+                    <th>Auftragsart</th>
+                    <th>Kundennummer</th>
+                    <th>Kundenname</th>
+                    <th>Maschinennummer</th>
+                    <th>Maschinenbezeichnung</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody data-bind="template: {name:'serviceAuftragListTemplate', foreach: serviceAuftrage}"></tbody>
+        </table>
+        <input class="btn btn-info" value="Serviceauftrag hinzufuegen" type="submit" data-bind="click: addServiceAuftrag" />
+
+        <script id="serviceAuftragListTemplate" type="text/html">
+            <tr>
+                <td data-bind="text: auftragsNummer"></td>
+                <td data-bind="text: auftragsArt"></td>
+                <td data-bind="text: kundenNummer"></td>
+                <td data-bind="text: kundenName"></td>
+                <td data-bind="text: maschinenNummer"></td>
+                <td data-bind="text: maschinenBezeichnung"></td>
+                <td><input class="btn btn-info pull-right" value="Bearbeiten" type="submit" data-bind="click: editServiceAuftrag" /></td>
+            </tr>
+        </script>
+    </div>
+</div>

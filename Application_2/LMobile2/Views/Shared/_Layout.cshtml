@@ -1,0 +1,24 @@
+﻿<!DOCTYPE html>
+<html manifest="CacheManifest.appcache">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>@ViewBag.Title - My ASP.NET Application</title>
+
+        @Styles.Render("~/Content/css")
+        @Scripts.Render("~/bundles/modernizr")
+        @Scripts.Render("~/bundles/jquery")
+        @Scripts.Render("~/bundles/bootstrap")
+        @RenderSection("scripts", required: false)
+
+    </head>
+    <body style="padding-top:0px;">    
+        <div class="container body-content">
+            @RenderBody()
+            <hr style="border-top:1px solid black"/>
+            <footer>
+                <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+            </footer>
+        </div>
+    </body>
+</html>

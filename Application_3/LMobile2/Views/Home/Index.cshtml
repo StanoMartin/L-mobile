@@ -1,0 +1,16 @@
+﻿@model List<LMobile2.Models.ServiceAuftrag>
+
+@{
+    ViewBag.Title = "Home Page";
+}
+
+@Scripts.Render("~/bundles/knockout")
+<script src="~/jaydata.js"></script>
+<script src="~/jaydatamodules/knockout.js"></script>
+<script src="~/jaydataproviders/SqLiteProvider.js"></script>
+
+<div class="container">
+    <div id="partialViews">
+        @{Html.RenderPartial("_ServiceAuftrageList", Model);}
+    </div>
+</div>

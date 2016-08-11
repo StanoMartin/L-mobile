@@ -1,0 +1,344 @@
+﻿@using Newtonsoft.Json;
+
+@model string
+
+<script src="~/Scripts/bootstrap-datepicker.js"></script>
+<script src="~/Scripts/bootstrap-timepicker.js"></script>
+<link href="~/Content/bootstrap-timepicker.min.css" rel="stylesheet" />
+<script src="~/jaydatamodules/deferred.js"></script>
+
+<h2>Serviceauftrag Detail</h2>
+<br />
+<div id="ServiceAuftragDetail">
+    <div class="row">
+        <h3>Kunde</h3>
+        <div class="col-sm-6">
+            <div class="form-horizontal" role="form" data-bind="with: kunde">
+                <div class="form-group">
+                    <label class="control-label col-sm-4">Kundennummer</label>
+                    <div class="col-sm-4">
+                        <input data-bind="value: kundenNummer, attr: {disabled: !IsNewEntry}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-sm-4">Name</label>
+                    <div class="col-sm-4">
+                        <input data-bind="value: name" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <h3>Maschine</h3>
+        <div class="col-sm-6">
+            <div class="form-horizontal" role="form" data-bind="with: machine">
+                <div class="form-group">
+                    <label class="control-label col-sm-4">Maschinennummer</label>
+                    <div class="col-sm-4">
+                        <input data-bind="value: machinenNummer, attr: {disabled: !IsNewEntry}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-sm-4">Bezeichnung</label>
+                    <div class="col-sm-4">
+                        <input data-bind="value: bezeichnung" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <h3>Serviceauftrag</h3>
+        <div class="col-sm-6">
+            <div class="form-horizontal" role="form">
+                <div class="form-group">
+                    <label class="control-label col-sm-4">Auftragsnummer</label>
+                    <div class="col-sm-4">
+                        <input data-bind="value: auftragsNummer, attr: {disabled: !IsNewEntry}" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-sm-4">Auftragsart</label>
+                    <div class="col-sm-4">
+                        <input data-bind="value: auftragsArt" />
+                    </div>
+                </div>
+            </div>            
+        </div>
+    </div>
+
+    <div class="row">
+        <h3>Arbeitszeitmeldung</h3>
+        <div class="col-sm-12">
+            <table class="dataTable table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Artikelnummer</th>
+                        <th>Anfang Datum</th>
+                        <th>Anfang Uhrzeit</th>
+                        <th>Ende Datum</th>
+                        <th>Ende Uhrzeit</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody data-bind="template: {name:'arbeitszeitMeldungenTemplate', foreach: arbeitsZeitMeldungen}"></tbody>
+            </table>
+            <input class="btn btn-info" value="Arbeitszeitmeldung hinzufuegen" type="submit" data-bind="click: addArbeitsZeitMeldung" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <input class="btn btn-info pull-right" style="margin-left:20px;" value="Abbrechen" type="submit" data-bind="click: cancel" />
+            <input class="btn btn-info pull-right" value="Speichern" type="submit" data-bind="click: save" />
+        </div>
+    </div>
+</div>
+
+<script id="arbeitszeitMeldungenTemplate" type="text/html">
+    <tr>
+        <td><input data-bind="value: artikelNummer, enable: isNew" /></td>
+        <td><input class="datepicker" data-bind="value: anfangDatum" /></td>
+        <td>
+            <div class="input-group bootstrap-timepicker timepicker">
+                <input type="text" class="form-control input-small" data-bind="value: anfangUhrzeit">
+                <span class="input-group-addon">
+                    <i class="glyphicon glyphicon-time"></i>
+                </span>
+            </div>
+        </td>
+        <td><input class="datepicker" data-bind="value: endeDatum" /></td>
+        <td>
+            <div class="input-group bootstrap-timepicker timepicker">
+                <input type="text" class="form-control input-small" data-bind="value: endeUhrzeit">
+                <span class="input-group-addon">
+                    <i class="glyphicon glyphicon-time"></i>
+                </span>
+            </div>
+        </td>
+        <td><input class="btn btn-info pull-right" value="Entfernen" type="submit" data-bind="click: removeArbeitsZeitMeldung" /></td>
+    </tr>
+</script>
+
+<script type="text/javascript">
+
+    var IsNewEntry = false;
+
+    var kundenVM = {
+        kundenNummer: ko.observable(""),
+        name: ko.observable("")
+    };
+
+    var machineVM = {
+        machinenNummer: ko.observable(""),
+        bezeichnung: ko.observable("")
+    };
+
+    var serviceAuftragDetailVM = {
+        auftragsNummer: ko.observable(""),
+        auftragsArt: ko.observable(),
+        kundenNummer: ko.observable(),
+        machinenNummer: ko.observable(),
+        kunde: ko.observable(kundenVM),
+        machine: ko.observable(machineVM),
+        arbeitsZeitMeldungen: ko.observableArray([]),
+        addArbeitsZeitMeldung: function () {
+            this.arbeitsZeitMeldungen.push(new arbeitsZeitMeldung());
+            InitializeDateTimePickers();
+        },
+        save: function () {
+            serviceAuftragDetailVM.kundenNummer(kundenVM.kundenNummer());
+            serviceAuftragDetailVM.machinenNummer(machineVM.machinenNummer());
+            SaveServiceAuftrag(serviceAuftragDetailVM);
+        },
+        cancel: function () {
+            Cancel();
+        }
+    };
+
+    //--------------------------Start: document ready-------------------------
+    $(function()
+    {
+        var auftragNummer = (@Html.Raw(JsonConvert.SerializeObject(Model)));
+        if(auftragNummer)
+        {
+            IsNewEntry = false;
+        }
+        else
+        {
+            IsNewEntry = true;
+        }
+        LoadDetail(auftragNummer);
+    });
+    //--------------------------End: document ready-------------------------
+
+    function loadArbeitsZeitMeldung(data) {
+        var self = this;
+
+        self.isNew = ko.observable(false);
+        self.artikelNummer = ko.observable(data.ArtikelNummer);
+        self.anfangDatum = ko.observable(new Date(data.AnfangDatum).toLocaleDateString());
+        self.endeDatum = ko.observable(new Date(data.EndeDatum).toLocaleDateString());
+
+        var aTime = new Date(data.AnfangUhrZeit);
+        self.anfangUhrzeit = ko.observable(aTime.getUTCHours() + ":" + aTime.getUTCMinutes());
+
+        var eTime = new Date(data.EndeUhrZeit);
+        self.endeUhrzeit = ko.observable(eTime.getUTCHours() + ":" + eTime.getUTCMinutes());
+
+        self.removeArbeitsZeitMeldung = function () {
+            serviceAuftragDetailVM.arbeitsZeitMeldungen.remove(this);
+        };
+    };
+
+    function arbeitsZeitMeldung() {
+        var self = this;
+        self.isNew = ko.observable(true);
+        self.artikelNummer = ko.observable();
+        self.anfangDatum = ko.observable();
+        self.endeDatum = ko.observable();
+        self.anfangUhrzeit = ko.observable();
+        self.endeUhrzeit = ko.observable();
+        self.removeArbeitsZeitMeldung = function () {
+            serviceAuftragDetailVM.arbeitsZeitMeldungen.remove(this);
+        };
+    };
+
+    function LoadDetail(auftragNummer)
+    {
+        if(!IsNewEntry)
+        {
+            $.ajax({
+                type: 'get',
+                url: "/oserviceauftragdata/ServiceAuftrage('"+auftragNummer+"')/?$expand=Kunde,Machine,ArbeitsZeitMeldungen",
+                dataType: 'json',
+                contentType: 'application/json',
+                success: function (data) {
+
+                    serviceAuftragDetailVM.auftragsNummer(data.AuftragsNummer);
+                    serviceAuftragDetailVM.auftragsArt(data.AuftragsArt);
+                    serviceAuftragDetailVM.kundenNummer(data.KundenNummer);
+                    serviceAuftragDetailVM.machinenNummer(data.MachinenNummer);
+
+                    if(data.ArbeitsZeitMeldungen)
+                    {
+                        for(var i=0;i<data.ArbeitsZeitMeldungen.length; i++)
+                        {
+                            serviceAuftragDetailVM.arbeitsZeitMeldungen().push(new loadArbeitsZeitMeldung(data.ArbeitsZeitMeldungen[i]));
+                        }
+                    }
+
+                    kundenVM.kundenNummer(data.Kunde.KundenNummer);
+                    kundenVM.name(data.Kunde.Name);
+
+                    machineVM.machinenNummer(data.Machine.MachinenNummer);
+                    machineVM.bezeichnung(data.Machine.Bezeichnung);
+
+                    InitializeBiniding();
+                }});
+        }
+        else
+        {
+            InitializeBiniding();
+        }
+    }
+
+    function InitializeBiniding()
+    {
+        ko.applyBindings(serviceAuftragDetailVM, document.getElementById("ServiceAuftragDetail"));
+        InitializeDateTimePickers();
+    }
+
+    function InitializeDateTimePickers()
+    {
+        $('.datepicker').datepicker({
+            format: "d.m.yyyy"
+        });
+        $('div.bootstrap-timepicker > input').timepicker({
+            showMeridian: false,
+            maxHours: 24
+        });
+    }
+
+    function SaveServiceAuftrag(saVM)
+    {
+        var k = {KundenNummer:  saVM.kunde().kundenNummer(), Name: saVM.kunde().name()};
+        var m = {MachinenNummer: saVM.machine().machinenNummer(), Bezeichnung: saVM.machine().bezeichnung()};
+                
+        var azmList = [];
+        for(var i = 0; i < saVM.arbeitsZeitMeldungen().length; i++)
+        {
+            var item = saVM.arbeitsZeitMeldungen()[i];
+            var azm = 
+                {
+                    ArtikelNummer: item.artikelNummer(),
+                    AnfangDatum: GetValidDate(item.anfangDatum()),
+                    AnfangUhrZeit: GetValidTime(item.anfangUhrzeit()),
+                    EndeDatum: GetValidDate(item.endeDatum()),
+                    EndeUhrZeit: GetValidTime(item.endeUhrzeit()),
+                    ServiceAuftragNummer: saVM.auftragsNummer()
+                };
+            azmList.push(azm);
+        }
+
+        var s = 
+        {
+            AuftragsNummer: saVM.auftragsNummer(),
+            AuftragsArt: saVM.auftragsArt(),
+            KundenNummer: saVM.kundenNummer(),
+            MachinenNummer: saVM.machinenNummer(),
+            Kunde: k,
+            Machine: m,
+            ArbeitsZeitMeldungen: azmList
+        };
+        
+        $.ajax({
+            type: 'POST',
+            url: "/oserviceauftragdata/ServiceAuftrage/",
+            data: JSON.stringify(s),
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function (data) {
+                Finish();
+            }});
+    }
+
+    function Finish()
+    {
+        $.ajax({
+            url: "@Url.Action("Save")",
+            type: "get",
+            success: function (data) {
+                $('#partialViews').empty();
+                $('#partialViews').html(data);
+            }
+        });
+    }
+
+    function Cancel()
+    {
+        $.ajax({
+            url: "@Url.Action("Cancel")",
+            type: "get",
+            contentType: "application/json",
+            success: function (data) {
+                $('#partialViews').empty();
+                $('#partialViews').html(data);
+            }
+        });
+    }
+
+    function GetValidTime(time){
+        var res = time.split(':');
+        var correctHours = res[0] < 10 ? "0" + res[0] : res[0];
+        var datetime = "1970-01-01T" + correctHours + ":" + res[1] + ":00";
+        return new Date(datetime);
+    }
+    
+    function GetValidDate(date){
+        var res = date.split('.');
+        return new Date(res[2], res[1]-1, res[0], 0,0,0,0);
+    }
+
+</script>
